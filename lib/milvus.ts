@@ -10,6 +10,15 @@ interface CodeChunk {
   similarity?: number; // Score from search
 }
 
+interface MilvusHit {
+  id: number;
+  content: string;
+  file_path: string;
+  embedding: number[];
+  sessionId: string;
+  score: number; // Milvus returns the similarity score as 'score'
+}
+
 const COLLECTION_NAME = 'code_embeddings';
 
 const getMilvusClient = async () => {
@@ -107,20 +116,22 @@ async function searchVectors(
     const results: CodeChunk[] = [];
     if (searchResult.results && searchResult.results[0]) {
       searchResult.results[0].forEach((hit: unknown) => {
-        // Type guard to ensure hit has expected properties, or cast to CodeChunk
+        // Type guard to ensure hit has expected properties
         if (typeof hit === 'object' && hit !== null &&
-            'id' in hit && typeof (hit as any).id === 'number' &&
-            'content' in hit && typeof (hit as any).content === 'string' &&
-            'file_path' in hit && typeof (hit as any).file_path === 'string' &&
-            'embedding' in hit && Array.isArray((hit as any).embedding) &&
-            'sessionId' in hit && typeof (hit as any).sessionId === 'string') {
+            'id' in hit && typeof (hit as MilvusHit).id === 'number' &&
+            'content' in hit && typeof (hit as MilvusHit).content === 'string' &&
+            'file_path' in hit && typeof (hit as MilvusHit).file_path === 'string' &&
+            'embedding' in hit && Array.isArray((hit as MilvusHit).embedding) &&
+            'sessionId' in hit && typeof (hit as MilvusHit).sessionId === 'string' &&
+            'score' in hit && typeof (hit as MilvusHit).score === 'number') {
+          const milvusHit = hit as MilvusHit;
           results.push({
-            id: (hit as any).id,
-            content: (hit as any).content,
-            file_path: (hit as any).file_path,
-            embedding: (hit as any).embedding,
-            sessionId: (hit as any).sessionId,
-            similarity: (hit as any).score, // Milvus returns the similarity score as 'score'
+            id: milvusHit.id,
+            content: milvusHit.content,
+            file_path: milvusHit.file_path,
+            embedding: milvusHit.embedding,
+            sessionId: milvusHit.sessionId,
+            similarity: milvusHit.score, // Milvus returns the similarity score as 'score'
           });
         } else {
           console.warn("Unexpected search result format:", hit);

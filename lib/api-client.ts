@@ -1,5 +1,3 @@
-import { NextRequest, NextResponse } from 'next/server';
-
 export interface FileNode {
   name: string;
   path: string;

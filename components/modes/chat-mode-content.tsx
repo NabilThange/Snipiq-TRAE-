@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useCallback } from "react"
 import { Bot, User, X } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { apiClient, ChatResponse } from "@/lib/api-client"
@@ -27,7 +27,7 @@ export default function ChatModeContent() {
   const [chatError, setChatError] = useState<string | null>(null)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
 
-  const addMessage = (content: string, type: "user" | "ai") => {
+  const addMessage = useCallback((content: string, type: "user" | "ai") => {
     const newMessage: ChatMessage = {
       id: Date.now().toString(),
       type,
@@ -35,9 +35,9 @@ export default function ChatModeContent() {
       timestamp: new Date(),
     }
     setMessages((prev) => [...prev, newMessage])
-  }
+  }, [setMessages])
 
-  const sendChatMessage = async (userMessage: string, currentSessionId: string) => {
+  const sendChatMessage = useCallback(async (userMessage: string, currentSessionId: string) => {
     setIsTyping(true)
     setChatError(null)
     try {
@@ -46,16 +46,16 @@ export default function ChatModeContent() {
         addMessage(response.response, "ai")
       } else {
         setChatError(response.message || "Failed to get chat response.")
-        addMessage(response.message || "Failed to get chat response.", "ai") // Add error message to chat
+        addMessage(response.message || "Failed to get chat response.", "ai")
       }
     } catch (error: unknown) {
       console.error("Error sending chat message:", error)
       setChatError(error instanceof Error ? error.message : "An unexpected error occurred during chat.")
-      addMessage(error instanceof Error ? error.message : "An unexpected error occurred during chat.", "ai") // Add error message to chat
+      addMessage(error instanceof Error ? error.message : "An unexpected error occurred during chat.", "ai")
     } finally {
       setIsTyping(false)
     }
-  }
+  }, [addMessage, setIsTyping, setChatError])
 
   // Auto-scroll to bottom when new messages are added
   useEffect(() => {

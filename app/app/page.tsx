@@ -15,7 +15,7 @@ import { apiClient } from "@/lib/api-client"
 import { useSession } from "@/lib/session-context"
 
 export default function AppPage() {
-  const { sessionId, setSessionId, isUploading, uploadedFilePaths, setUploadedFilePaths, _uploadError, setUploadError } = useSession()
+  const { sessionId, setSessionId, isUploading, uploadedFilePaths, setUploadedFilePaths, setUploadError } = useSession()
   console.log('DEBUG: sessionId in AppPage:', sessionId);
   console.log('DEBUG: isUploading in AppPage:', isUploading);
   console.log('DEBUG: uploadedFilePaths in AppPage:', uploadedFilePaths);
@@ -154,7 +154,6 @@ export default function AppPage() {
               {currentMode !== "build-understand" && currentMode !== "summarize" && currentMode !== "visualize" && (
                 <SearchInterface 
                   currentMode={currentMode} 
-                  sessionId={sessionId} 
                   onSearch={handleSearch} 
                   isSearching={isSearching} 
                 />

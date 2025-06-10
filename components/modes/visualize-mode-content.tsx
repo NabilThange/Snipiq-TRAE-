@@ -45,7 +45,7 @@ export default function VisualizeModeContent({ sessionId }: VisualizeModeContent
     fetchVisualizationData()
   }, [sessionId])
 
-  const getNodeColor = (node: VisualizeNode) => {
+  const getNodeColor = (_node: VisualizeNode) => {
     // Simplified color logic as type/language might not be directly available from Zilliz query
     return "#000000" // Default to black for all nodes
   }

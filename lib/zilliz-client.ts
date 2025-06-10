@@ -1,8 +1,8 @@
-import { MilvusClient, DataType } from '@zilliz/milvus2-sdk-node';
-import { ZillizSearchResponse, RawZillizHit } from './types';
+import { MilvusClient, DataType, MutationResult } from '@zilliz/milvus2-sdk-node';
+import { RawZillizHit } from './types';
 
 interface CodeChunk {
-  id?: number;
+  id?: number | string;
   content: string;
   filePath: string;
   embedding: number[];
@@ -54,13 +54,13 @@ class ZillizClient {
       } else {
         console.log(`Collection ${collectionName} already exists.`);
       }
-    } catch (error: any) {
-      console.error(`Error creating collection ${collectionName}:`, error);
-      throw new Error(`Failed to create collection: ${error}`);
+    } catch (error: unknown) {
+      console.error(`Error creating collection ${collectionName}:`, error instanceof Error ? error.message : String(error));
+      throw new Error(`Failed to create collection: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
-  async insertVectors(data: CodeChunk[]): Promise<any> {
+  async insertVectors(data: CodeChunk[]): Promise<MutationResult> {
     try {
       const formattedData = data.map(chunk => ({
         vector: chunk.embedding,
@@ -76,9 +76,9 @@ class ZillizClient {
       });
       console.log('Vectors inserted successfully:', result);
       return result;
-    } catch (error) {
-      console.error('Error inserting vectors:', error);
-      throw new Error(`Failed to insert vectors: ${error}`);
+    } catch (error: unknown) {
+      console.error('Error inserting vectors:', error instanceof Error ? error.message : String(error));
+      throw new Error(`Failed to insert vectors: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -90,35 +90,49 @@ class ZillizClient {
         collection_name: this.defaultCollectionName,
         vectors: [vector],
         limit: limit,
-        output_fields: ['content', 'filePath', 'sessionId', 'lineNumber'],
+        output_fields: ['content', 'filePath', 'sessionId', 'lineNumber', 'score', 'id'], // Added id and score to output fields
         filter: `sessionId == "${sessionId}"`,
         metric_type: 'COSINE',
       });
 
       // 🔍 DEBUG: Let's see the actual structure
       console.log('Raw search result:', JSON.stringify(searchResult, null, 2));
-      console.log('searchResult.results:', JSON.stringify(searchResult.results, null, 2));
       
       const results: RawZillizHit[] = [];
       
-      if (Array.isArray(searchResult.results)) {
-        searchResult.results.forEach((hit: any) => {
-          results.push({
-            content: hit.content,
-            filePath: hit.filePath, 
-            sessionId: hit.sessionId,
-            similarity: hit.score, // Use score from Zilliz
-            lineNumber: hit.lineNumber,
-          });
+      if (searchResult.results && searchResult.results.length > 0 && Array.isArray(searchResult.results[0])) {
+        (searchResult.results[0] as unknown[]).forEach((item: unknown) => {
+          // Type guard to ensure item has expected properties
+          if (typeof item === 'object' && item !== null &&
+              'id' in item && (typeof (item as any).id === 'number' || typeof (item as any).id === 'string') &&
+              'content' in item && typeof (item as any).content === 'string' &&
+              'filePath' in item && typeof (item as any).filePath === 'string' &&
+              'sessionId' in item && typeof (item as any).sessionId === 'string' &&
+              'score' in item && typeof (item as any).score === 'number' &&
+              'lineNumber' in item && typeof (item as any).lineNumber === 'number') {
+            const hitItem = item as { id: number | string; content: string; filePath: string; sessionId: string; score: number; lineNumber: number; };
+            results.push({
+              id: typeof hitItem.id === 'string' ? parseInt(hitItem.id) : hitItem.id,
+              content: hitItem.content,
+              filePath: hitItem.filePath,
+              sessionId: hitItem.sessionId,
+              score: hitItem.score, // Use score directly
+              lineNumber: hitItem.lineNumber,
+            });
+          } else {
+            console.warn("Unexpected search result item format:", item);
+          }
         });
-      } 
+      } else {
+        console.log("No valid search results array found or unexpected structure:", searchResult);
+      }
       
       console.log(`Found ${results.length} search results`);
       console.log('🔧 ZillizClient returning:', results.length, 'results');
       return results;
-    } catch (error: any) {
-      console.error('Error searching vectors:', error);
-      throw new Error(`Failed to search vectors: ${error}`);
+    } catch (error: unknown) {
+      console.error('Error searching vectors:', error instanceof Error ? error.message : String(error));
+      throw new Error(`Failed to search vectors: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -127,27 +141,39 @@ class ZillizClient {
       const queryResult = await this.client.query({
         collection_name: this.defaultCollectionName,
         filter: `sessionId == "${sessionId}"`,
-        output_fields: ['content', 'filePath', 'embedding', 'sessionId'],
+        output_fields: ['content', 'filePath', 'embedding', 'sessionId', 'lineNumber', 'id'], // Added id and lineNumber to output fields
       });
 
       const results: CodeChunk[] = [];
       if (queryResult.data) {
-        queryResult.data.forEach((item: any) => {
-          results.push({
-            id: item.id,
-            content: item.content,
-            filePath: item.filePath,
-            embedding: item.embedding,
-            sessionId: item.sessionId,
-            lineNumber: item.lineNumber,
-          });
+        queryResult.data.forEach((item: unknown) => {
+          // Type guard to ensure item has expected properties
+          if (typeof item === 'object' && item !== null &&
+              'id' in item && (typeof (item as any).id === 'number' || typeof (item as any).id === 'string') && // ID can be number or string
+              'content' in item && typeof (item as any).content === 'string' &&
+              'filePath' in item && typeof (item as any).filePath === 'string' &&
+              'embedding' in item && Array.isArray((item as any).embedding) &&
+              'sessionId' in item && typeof (item as any).sessionId === 'string' &&
+              'lineNumber' in item && typeof (item as any).lineNumber === 'number') {
+            const codeChunkItem = item as CodeChunk;
+            results.push({
+              id: typeof codeChunkItem.id === 'string' ? parseInt(codeChunkItem.id) : codeChunkItem.id,
+              content: codeChunkItem.content,
+              filePath: codeChunkItem.filePath,
+              embedding: codeChunkItem.embedding,
+              sessionId: codeChunkItem.sessionId,
+              lineNumber: codeChunkItem.lineNumber,
+            });
+          } else {
+            console.warn("Unexpected query result format:", item);
+          }
         });
       }
       console.log(`Queried data for session ${sessionId}:`, results.length);
       return results;
-    } catch (error: any) {
-      console.error(`Error querying data for session ${sessionId}:`, error);
-      throw new Error(`Failed to query session data: ${error}`);
+    } catch (error: unknown) {
+      console.error(`Error querying data for session ${sessionId}:`, error instanceof Error ? error.message : String(error));
+      throw new Error(`Failed to query session data: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -157,43 +183,53 @@ class ZillizClient {
       const queryResult = await this.client.query({
         collection_name: this.defaultCollectionName,
         filter: `sessionId == "${sessionId}"`,
-        output_fields: ['content', 'filePath', 'sessionId'],
+        output_fields: ['content', 'filePath', 'sessionId', 'lineNumber', 'id'], // Added id to output fields
         limit: limit
       });
 
       const results: CodeChunk[] = [];
       if (queryResult.data) {
-        queryResult.data.forEach((item: any) => {
-          results.push({
-            id: item.id,
-            content: item.content,
-            filePath: item.filePath,
-            embedding: [], // We don't need embeddings for summarization
-            sessionId: item.sessionId,
-            lineNumber: item.lineNumber,
-          });
+        queryResult.data.forEach((item: unknown) => {
+          // Type guard to ensure item has expected properties
+          if (typeof item === 'object' && item !== null &&
+              'id' in item && (typeof (item as any).id === 'number' || typeof (item as any).id === 'string') && // ID can be number or string
+              'content' in item && typeof (item as any).content === 'string' &&
+              'filePath' in item && typeof (item as any).filePath === 'string' &&
+              'sessionId' in item && typeof (item as any).sessionId === 'string' &&
+              'lineNumber' in item && typeof (item as any).lineNumber === 'number') {
+            const codeChunkItem = item as CodeChunk;
+            results.push({
+              id: typeof codeChunkItem.id === 'string' ? parseInt(codeChunkItem.id) : codeChunkItem.id,
+              content: codeChunkItem.content,
+              filePath: codeChunkItem.filePath,
+              embedding: [],
+              sessionId: codeChunkItem.sessionId,
+              lineNumber: codeChunkItem.lineNumber,
+            });
+          } else {
+            console.warn("Unexpected getAllChunks result format:", item);
+          }
         });
       }
       console.log(`Retrieved ${results.length} chunks`);
       return results;
-    } catch (error: any) {
-      console.error(`Error retrieving all chunks for session ${sessionId}:`, error);
-      throw new Error(`Failed to retrieve all chunks: ${error.message}`);
+    } catch (error: unknown) {
+      console.error(`Error retrieving all chunks for session ${sessionId}:`, error instanceof Error ? error.message : String(error));
+      throw new Error(`Failed to retrieve all chunks: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
-  // You might want methods for deleting collections/data by sessionId as well.
-  async deleteSessionData(sessionId: string): Promise<any> {
+  async deleteSessionData(sessionId: string): Promise<MutationResult> {
     try {
       const result = await this.client.delete({
         collection_name: this.defaultCollectionName,
-        filter: `sessionId == "${sessionId}"`, // Delete all data associated with the session
+        filter: `sessionId == "${sessionId}"`,
       });
       console.log(`Data for session ${sessionId} deleted successfully:`, result);
       return result;
-    } catch (error: any) {
-      console.error(`Error deleting data for session ${sessionId}:`, error);
-      throw new Error(`Failed to delete session data: ${error}`);
+    } catch (error: unknown) {
+      console.error(`Error deleting data for session ${sessionId}:`, error instanceof Error ? error.message : String(error));
+      throw new Error(`Failed to delete session data: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 }

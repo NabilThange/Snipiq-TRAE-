@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { CodeChunker } from '../../../lib/code-chunker';
 import NovitaClient from '../../../lib/novita-client';
 import { getMilvusClient, COLLECTION_NAME } from '../../../lib/milvus';
+import { MilvusClient } from '@zilliz/milvus2-sdk-node';
+import { processConcurrently } from '@/lib/utils';
 
 const novitaClient = new NovitaClient(process.env.NOVITA_API_KEY || '');
 
@@ -115,7 +117,7 @@ async function processCodeFileContent(file: FileNode, sessionId: string) {
 }
 
 // Optimized index creation with better error handling
-async function createIndexIfNeeded(milvusClient: any, totalEmbeddings: number) {
+async function createIndexIfNeeded(milvusClient: MilvusClient, totalEmbeddings: number) {
   try {
     // Check if index already exists
     const indexInfo = await milvusClient.describeIndex({

@@ -15,21 +15,12 @@ export interface SearchResult {
 }
 
 export interface RawZillizHit {
+  id?: number | string; // Zilliz might return id as number or string
   content: string;
-  filePath?: string;
+  filePath: string;
   sessionId: string;
-  score?: number; // Zilliz might return 'score' or 'similarity'
-  similarity?: number;
-  lineNumber?: number;
-}
-
-export interface ZillizSearchResponse {
-  status: unknown;
-  results: RawZillizHit[];
-  recalls: unknown[];
-  session_ts: string;
-  collection_name: string;
-  all_search_count: string;
+  score: number; // Changed from 'similarity' to 'score' to match Milvus output
+  lineNumber: number;
 }
 
 export interface UploadResponse {
