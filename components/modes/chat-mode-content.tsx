@@ -81,7 +81,7 @@ export default function ChatModeContent() {
 
     window.addEventListener("chatMessage", handleChatMessage as EventListener)
     return () => window.removeEventListener("chatMessage", handleChatMessage as EventListener)
-  }, [sessionId, sendChatMessage]) // Re-run effect if sessionId or sendChatMessage changes
+  }, [sessionId, sendChatMessage, addMessage])
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })

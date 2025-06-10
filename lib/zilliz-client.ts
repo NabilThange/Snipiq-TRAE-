@@ -103,24 +103,38 @@ class ZillizClient {
       if (searchResult.results && searchResult.results.length > 0 && Array.isArray(searchResult.results[0])) {
         (searchResult.results[0] as unknown[]).forEach((item: unknown) => {
           // Type guard to ensure item has expected properties
-          if (typeof item === 'object' && item !== null &&
-              'id' in item && (typeof (item as any).id === 'number' || typeof (item as any).id === 'string') &&
-              'content' in item && typeof (item as any).content === 'string' &&
-              'filePath' in item && typeof (item as any).filePath === 'string' &&
-              'sessionId' in item && typeof (item as any).sessionId === 'string' &&
-              'score' in item && typeof (item as any).score === 'number' &&
-              'lineNumber' in item && typeof (item as any).lineNumber === 'number') {
-            const hitItem = item as { id: number | string; content: string; filePath: string; sessionId: string; score: number; lineNumber: number; };
-            results.push({
-              id: typeof hitItem.id === 'string' ? parseInt(hitItem.id) : hitItem.id,
-              content: hitItem.content,
-              filePath: hitItem.filePath,
-              sessionId: hitItem.sessionId,
-              score: hitItem.score, // Use score directly
-              lineNumber: hitItem.lineNumber,
-            });
+          if (typeof item === 'object' && item !== null) {
+            const typedItem = item as {
+              id?: unknown;
+              content?: unknown;
+              filePath?: unknown;
+              sessionId?: unknown;
+              score?: unknown;
+              lineNumber?: unknown;
+            }; // Intermediate type for property access checks
+
+            if (
+              (typeof typedItem.id === 'number' || typeof typedItem.id === 'string') &&
+              typeof typedItem.content === 'string' &&
+              typeof typedItem.filePath === 'string' &&
+              typeof typedItem.sessionId === 'string' &&
+              typeof typedItem.score === 'number' &&
+              typeof typedItem.lineNumber === 'number'
+            ) {
+              const hitItem = item as RawZillizHit; // This cast should now be safer
+              results.push({
+                id: typeof hitItem.id === 'string' ? parseInt(hitItem.id) : hitItem.id,
+                content: hitItem.content,
+                filePath: hitItem.filePath,
+                sessionId: hitItem.sessionId,
+                score: hitItem.score,
+                lineNumber: hitItem.lineNumber,
+              });
+            } else {
+              console.warn("Unexpected search result item format (missing or invalid properties):", item);
+            }
           } else {
-            console.warn("Unexpected search result item format:", item);
+            console.warn("Unexpected search result item format (not an object):", item);
           }
         });
       } else {
@@ -148,24 +162,38 @@ class ZillizClient {
       if (queryResult.data) {
         queryResult.data.forEach((item: unknown) => {
           // Type guard to ensure item has expected properties
-          if (typeof item === 'object' && item !== null &&
-              'id' in item && (typeof (item as any).id === 'number' || typeof (item as any).id === 'string') && // ID can be number or string
-              'content' in item && typeof (item as any).content === 'string' &&
-              'filePath' in item && typeof (item as any).filePath === 'string' &&
-              'embedding' in item && Array.isArray((item as any).embedding) &&
-              'sessionId' in item && typeof (item as any).sessionId === 'string' &&
-              'lineNumber' in item && typeof (item as any).lineNumber === 'number') {
-            const codeChunkItem = item as CodeChunk;
-            results.push({
-              id: typeof codeChunkItem.id === 'string' ? parseInt(codeChunkItem.id) : codeChunkItem.id,
-              content: codeChunkItem.content,
-              filePath: codeChunkItem.filePath,
-              embedding: codeChunkItem.embedding,
-              sessionId: codeChunkItem.sessionId,
-              lineNumber: codeChunkItem.lineNumber,
-            });
+          if (typeof item === 'object' && item !== null) {
+            const typedItem = item as {
+              id?: unknown;
+              content?: unknown;
+              filePath?: unknown;
+              embedding?: unknown;
+              sessionId?: unknown;
+              lineNumber?: unknown;
+            };
+
+            if (
+              (typeof typedItem.id === 'number' || typeof typedItem.id === 'string') &&
+              typeof typedItem.content === 'string' &&
+              typeof typedItem.filePath === 'string' &&
+              Array.isArray(typedItem.embedding) && typedItem.embedding.every((e: unknown) => typeof e === 'number') &&
+              typeof typedItem.sessionId === 'string' &&
+              typeof typedItem.lineNumber === 'number'
+            ) {
+              const codeChunkItem = item as CodeChunk; // This cast should now be safer
+              results.push({
+                id: typeof codeChunkItem.id === 'string' ? parseInt(codeChunkItem.id) : codeChunkItem.id,
+                content: codeChunkItem.content,
+                filePath: codeChunkItem.filePath,
+                embedding: codeChunkItem.embedding,
+                sessionId: codeChunkItem.sessionId,
+                lineNumber: codeChunkItem.lineNumber,
+              });
+            } else {
+              console.warn("Unexpected query result format (missing or invalid properties):", item);
+            }
           } else {
-            console.warn("Unexpected query result format:", item);
+            console.warn("Unexpected query result format (not an object):", item);
           }
         });
       }
@@ -191,23 +219,36 @@ class ZillizClient {
       if (queryResult.data) {
         queryResult.data.forEach((item: unknown) => {
           // Type guard to ensure item has expected properties
-          if (typeof item === 'object' && item !== null &&
-              'id' in item && (typeof (item as any).id === 'number' || typeof (item as any).id === 'string') && // ID can be number or string
-              'content' in item && typeof (item as any).content === 'string' &&
-              'filePath' in item && typeof (item as any).filePath === 'string' &&
-              'sessionId' in item && typeof (item as any).sessionId === 'string' &&
-              'lineNumber' in item && typeof (item as any).lineNumber === 'number') {
-            const codeChunkItem = item as CodeChunk;
-            results.push({
-              id: typeof codeChunkItem.id === 'string' ? parseInt(codeChunkItem.id) : codeChunkItem.id,
-              content: codeChunkItem.content,
-              filePath: codeChunkItem.filePath,
-              embedding: [],
-              sessionId: codeChunkItem.sessionId,
-              lineNumber: codeChunkItem.lineNumber,
-            });
+          if (typeof item === 'object' && item !== null) {
+            const typedItem = item as {
+              id?: unknown;
+              content?: unknown;
+              filePath?: unknown;
+              sessionId?: unknown;
+              lineNumber?: unknown;
+            };
+
+            if (
+              (typeof typedItem.id === 'number' || typeof typedItem.id === 'string') &&
+              typeof typedItem.content === 'string' &&
+              typeof typedItem.filePath === 'string' &&
+              typeof typedItem.sessionId === 'string' &&
+              typeof typedItem.lineNumber === 'number'
+            ) {
+              const codeChunkItem = item as CodeChunk; // This cast should now be safer
+              results.push({
+                id: typeof codeChunkItem.id === 'string' ? parseInt(codeChunkItem.id) : codeChunkItem.id,
+                content: codeChunkItem.content,
+                filePath: codeChunkItem.filePath,
+                embedding: [],
+                sessionId: codeChunkItem.sessionId,
+                lineNumber: codeChunkItem.lineNumber,
+              });
+            } else {
+              console.warn("Unexpected getAllChunks result format (missing or invalid properties):", item);
+            }
           } else {
-            console.warn("Unexpected getAllChunks result format:", item);
+            console.warn("Unexpected getAllChunks result format (not an object):", item);
           }
         });
       }

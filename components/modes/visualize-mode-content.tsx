@@ -45,12 +45,12 @@ export default function VisualizeModeContent({ sessionId }: VisualizeModeContent
     fetchVisualizationData()
   }, [sessionId])
 
-  const getNodeColor = (_node: VisualizeNode) => {
+  const getNodeColor = () => {
     // Simplified color logic as type/language might not be directly available from Zilliz query
     return "#000000" // Default to black for all nodes
   }
 
-  const getNodeSize = (_node: VisualizeNode) => { // Renamed node to _node to mark as unused
+  const getNodeSize = () => { // Renamed node to _node to mark as unused
     // All nodes are treated as files in the simplified visualization
     return 40
   }
@@ -223,8 +223,8 @@ export default function VisualizeModeContent({ sessionId }: VisualizeModeContent
               return (
                 <g key={node.id} transform={`translate(${x},${y})`}>
                   <circle
-                    r={getNodeSize(node) / 2}
-                    fill={getNodeColor(node)}
+                    r={getNodeSize() / 2}
+                    fill={getNodeColor()}
                     stroke="#000000"
                     strokeWidth="2"
                   />
