@@ -10,7 +10,6 @@ const MAX_INDEX_WAIT_TIME = 10 * 60 * 1000;
 const POLLING_INTERVAL = 2000;
 const MAX_CONCURRENT_FILES = 5; // Process max 5 files concurrently
 const MAX_CONCURRENT_EMBEDDINGS = 10; // Process max 10 embeddings concurrently
-const EMBEDDING_BATCH_SIZE = 20; // Process embeddings in batches
 const MAX_RETRIES = 30; // Max attempts for index polling
 
 interface FileNode {
@@ -75,7 +74,7 @@ async function processCodeFileContent(file: FileNode, sessionId: string) {
       chunkType?: string;
     }> = [];
 
-    const processChunk = async (chunk: any) => {
+    const processChunk = async (chunk: { content: string; startLine?: number; endLine?: number; type?: string; }) => {
       try {
         const embeddingResponse = await novitaClient.generateEmbeddings(chunk.content);
         if (embeddingResponse.data && embeddingResponse.data.length > 0) {
@@ -245,13 +244,11 @@ export async function POST(req: NextRequest) {
       });
     }
     
-    const insertTime = Date.now() - insertStartTime;
-    console.log(`Embeddings inserted in ${insertTime}ms`);
+    const _insertTime = Date.now() - insertStartTime; // Renamed to _insertTime to mark as unused
+    console.log(`Embeddings inserted in ${_insertTime}ms`);
 
     // Create index if needed
     await createIndexIfNeeded(milvusClient, embeddingsToInsert.length);
-
-    const indexTime = Date.now() - insertStartTime - insertTime;
 
     console.log(`Indexing process completed in ${Date.now() - startTime}ms`);
 
@@ -260,7 +257,7 @@ export async function POST(req: NextRequest) {
       message: 'Codebase indexed successfully.',
       totalChunks: embeddingsToInsert.length,
       processingTime: totalProcessingTime,
-      indexingTime: Date.now() - startTime - totalProcessingTime
+      indexingTime: Date.now() - startTime - totalProcessingTime // Corrected calculation
     }, { status: 200 });
 
   } catch (error: unknown) {

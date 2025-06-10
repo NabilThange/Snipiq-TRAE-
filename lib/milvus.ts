@@ -13,7 +13,7 @@ interface CodeChunk {
 const COLLECTION_NAME = 'code_embeddings';
 
 const getMilvusClient = async () => {
-  const config: any = {
+  const config: { address: string; port: number; ssl: boolean; token?: string; } = {
     address: process.env.MILVUS_HOST || 'localhost',
     port: process.env.MILVUS_PORT ? parseInt(process.env.MILVUS_PORT) : 19530,
     ssl: true, // Always true for Zilliz Cloud
@@ -66,15 +66,15 @@ const getMilvusClient = async () => {
       // Removed: Index creation logic moved to api/index/route.ts
 
     }
-  } catch (error) {
-    console.error('Error creating/checking collection:', error);
+  } catch (error: unknown) {
+    console.error('Error creating/checking collection:', error instanceof Error ? error.message : String(error));
     throw error;
   }
 
   return client;
 };
 
-async function queryBySessionId(sessionId: string): Promise<any[]> {
+async function queryBySessionId(sessionId: string): Promise<CodeChunk[]> {
   const client = await getMilvusClient();
   try {
     const queryResult = await client.query({
@@ -82,10 +82,10 @@ async function queryBySessionId(sessionId: string): Promise<any[]> {
       filter: `sessionId == "${sessionId}"`,
       output_fields: ['content', 'file_path', 'embedding', 'sessionId'],
     });
-    return queryResult.data || [];
-  } catch (error) {
+    return (queryResult.data || []) as CodeChunk[];
+  } catch (error: unknown) {
     console.error(`Error querying data for session ${sessionId}:`, error);
-    throw new Error(`Failed to query session data: ${error}`);
+    throw new Error(`Failed to query session data: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
@@ -106,21 +106,31 @@ async function searchVectors(
 
     const results: CodeChunk[] = [];
     if (searchResult.results && searchResult.results[0]) {
-      searchResult.results[0].forEach((hit: any) => {
-        results.push({
-          id: hit.id,
-          content: hit.content,
-          file_path: hit.file_path,
-          embedding: hit.embedding,
-          sessionId: hit.sessionId,
-          similarity: hit.score, // Milvus returns the similarity score as 'score'
-        });
+      searchResult.results[0].forEach((hit: unknown) => {
+        // Type guard to ensure hit has expected properties, or cast to CodeChunk
+        if (typeof hit === 'object' && hit !== null &&
+            'id' in hit && typeof (hit as any).id === 'number' &&
+            'content' in hit && typeof (hit as any).content === 'string' &&
+            'file_path' in hit && typeof (hit as any).file_path === 'string' &&
+            'embedding' in hit && Array.isArray((hit as any).embedding) &&
+            'sessionId' in hit && typeof (hit as any).sessionId === 'string') {
+          results.push({
+            id: (hit as any).id,
+            content: (hit as any).content,
+            file_path: (hit as any).file_path,
+            embedding: (hit as any).embedding,
+            sessionId: (hit as any).sessionId,
+            similarity: (hit as any).score, // Milvus returns the similarity score as 'score'
+          });
+        } else {
+          console.warn("Unexpected search result format:", hit);
+        }
       });
     }
     return results;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(`Error searching data for session ${sessionId}:`, error);
-    throw new Error(`Failed to search session data: ${error}`);
+    throw new Error(`Failed to search session data: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 

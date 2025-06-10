@@ -5,7 +5,7 @@ import { Upload, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { apiClient } from "@/lib/api-client"
 import { useSession } from "@/lib/session-context"
-import { FileNode, UploadResponse, IndexRequest } from "@/lib/api-client"
+import { FileNode, IndexRequest } from "@/lib/api-client"
 
 export default function UploadSection() {
   const { setSessionId, isUploading, setIsUploading, setUploadedFilePaths, uploadError, setUploadError } = useSession()
@@ -159,20 +159,20 @@ export default function UploadSection() {
       // Success message
       console.log(`Upload and indexing complete! Processed ${uploadResponse.totalCodeFiles} code files.`)
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Upload/Indexing failed:", error)
       
       let errorMessage = "An unexpected error occurred during upload or indexing."
       
-      if (error.message?.includes("No code files found")) {
+      if (error instanceof Error && error.message?.includes("No code files found")) {
         errorMessage = "No supported code files found in the uploaded file. Please upload a file containing code files with supported extensions."
-      } else if (error.message?.includes("400")) {
+      } else if (error instanceof Error && error.message?.includes("400")) {
         errorMessage = "Server rejected the request. Please check your file format and try again."
-      } else if (error.message?.includes("413")) {
+      } else if (error instanceof Error && error.message?.includes("413")) {
         errorMessage = "File too large. Please upload a file smaller than 100MB."
-      } else if (error.message?.includes("network") || error.message?.includes("fetch")) {
+      } else if (error instanceof Error && (error.message?.includes("network") || error.message?.includes("fetch"))) {
         errorMessage = "Network error. Please check your connection and try again."
-      } else if (error.message) {
+      } else if (error instanceof Error && error.message) {
         errorMessage = error.message
       }
       

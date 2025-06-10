@@ -19,7 +19,7 @@ export async function uploadCodebase(file: File): Promise<string> {
   return "session_" + Math.random().toString(36).substring(2, 15)
 }
 
-export async function searchCode(sessionId: string, query: string): Promise<SearchResult[]> {
+export async function searchCode(): Promise<SearchResult[]> {
   // In a real implementation, this would be an actual API call
   // For now, we'll simulate the API call
 
@@ -38,7 +38,7 @@ export async function searchCode(sessionId: string, query: string): Promise<Sear
   ]
 }
 
-export async function clearSession(sessionId: string): Promise<void> {
+export async function clearSession(): Promise<void> {
   // In a real implementation, this would be an actual API call
   // For now, we'll simulate the API call
 

@@ -77,9 +77,9 @@ export default function SummarizeModeContent({ sessionId }: { sessionId: string 
       } else {
         setSummarizeError(response.message || "Failed to generate summary.")
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error generating file summary:", error)
-      setSummarizeError(error.message || "An unexpected error occurred during summarization.")
+      setSummarizeError(error instanceof Error ? error.message : "An unexpected error occurred during summarization.")
     } finally {
       setIsGenerating(false)
     }
@@ -98,9 +98,9 @@ export default function SummarizeModeContent({ sessionId }: { sessionId: string 
       } else {
         setSummarizeError(response.message || "Failed to generate project summary.")
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error generating project summary:", error)
-      setSummarizeError(error.message || "An unexpected error occurred during project summarization.")
+      setSummarizeError(error instanceof Error ? error.message : "An unexpected error occurred during project summarization.")
     } finally {
       setIsGenerating(false)
     }

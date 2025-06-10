@@ -3,6 +3,7 @@
 import type React from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 import { Search, FileText, MessageCircle, BarChart3, Upload, Check, Star, Users, Zap, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -83,9 +84,11 @@ export default function LandingPage() {
                 <div className="flex flex-col items-center text-center flex-1">
                   {/* Centered Illustration */}
                   <div className="flex-shrink-0 mb-4">
-                    <img
+                    <Image
                       src="/blue1.png"
                       alt="Community illustration"
+                      width={112}
+                      height={112}
                       className="w-20 h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 mx-auto"
                     />
                   </div>
@@ -113,9 +116,11 @@ export default function LandingPage() {
                 <div className="flex flex-col items-center text-center flex-1">
                   {/* Centered Illustration */}
                   <div className="flex-shrink-0 mb-4">
-                    <img
+                    <Image
                       src="/ai.png"
                       alt="Support team illustration"
+                      width={118}
+                      height={112}
                       className="w-[86px] h-20 md:w-[102px] md:h-24 lg:w-[118px] lg:h-28 mx-auto"
                     />
                   </div>
@@ -125,7 +130,7 @@ export default function LandingPage() {
                     <div>
                       <h3 className="text-xl md:text-2xl font-black text-black mb-3 md:mb-4">AI-Powered Code Learning</h3>
                       <p className="text-black font-normal leading-relaxed text-sm md:text-base">
-                        Master any codebase faster than ever! Snipiq's AI assistant breaks down complex code, teaches you step by step, and helps you build with confidence — no matter your experience level.
+                        Master any codebase faster than ever! Snipiq&apos;s AI assistant breaks down complex code, teaches you step by step, and helps you build with confidence &mdash; no matter your experience level.
                       </p>
                     </div>
                     {/* <div className="mt-4">
@@ -248,15 +253,15 @@ export default function LandingPage() {
                 <ul className="space-y-2">
                   <li className="flex items-center text-black font-bold">
                     <Check className="w-5 h-5 mr-2" />
-                    Dependency mapping
+                    Interactive graphs and charts
                   </li>
                   <li className="flex items-center text-black font-bold">
                     <Check className="w-5 h-5 mr-2" />
-                    Interactive graphs
+                    Call stack visualization
                   </li>
                   <li className="flex items-center text-black font-bold">
                     <Check className="w-5 h-5 mr-2" />
-                    Architecture overview
+                    Module dependency mapping
                   </li>
                 </ul>
               </div>
@@ -268,8 +273,12 @@ export default function LandingPage() {
         <section id="how-it-works" className="py-20 bg-white">
           <div className="container mx-auto px-4 max-w-7xl">
             <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-6xl font-black uppercase text-black mb-4 tracking-tight">How It Works</h2>
-              <p className="text-xl font-bold text-black max-w-2xl mx-auto">Get started in three simple steps</p>
+              <h2 className="text-4xl md:text-6xl font-black uppercase text-black mb-4 tracking-tight">
+                Simple Steps to Insight
+              </h2>
+              <p className="text-xl font-bold text-black max-w-2xl mx-auto">
+                Getting started with Snipiq is quick and easy
+              </p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-8">
@@ -280,7 +289,7 @@ export default function LandingPage() {
                 </div>
                 <h3 className="text-2xl font-black uppercase text-black mb-4">Upload Codebase</h3>
                 <p className="text-lg font-bold text-black leading-relaxed">
-                  Upload your .zip file containing your codebase. We support all major programming languages.
+                  Securely upload your entire codebase with a simple drag-and-drop. We support all major languages.
                 </p>
               </div>
 
@@ -330,12 +339,11 @@ export default function LandingPage() {
                   ))}
                 </div>
                 <p className="text-lg font-bold text-black mb-6 leading-relaxed">
-                  "Snipiq completely changed how I navigate large codebases. The semantic search is incredibly
-                  accurate!"
+                  &quot;Snipiq completely changed how I navigate large codebases. The semantic search is incredibly accurate!&quot;
                 </p>
                 <div className="flex items-center">
                   <div className="w-12 h-12 bg-black text-[#FFFF00] border-2 border-black flex items-center justify-center mr-4 font-black">
-                    JS
+                    <Users className="w-6 h-6" />
                   </div>
                   <div>
                     <div className="font-black text-black">Jane Smith</div>
@@ -352,12 +360,11 @@ export default function LandingPage() {
                   ))}
                 </div>
                 <p className="text-lg font-bold text-black mb-6 leading-relaxed">
-                  "The chat feature is like having a senior developer explain the codebase to you. Absolutely
-                  brilliant!"
+                  &quot;The chat feature is like having a senior developer explain the codebase to you. Absolutely brilliant!&quot;
                 </p>
                 <div className="flex items-center">
                   <div className="w-12 h-12 bg-black text-[#FFB3BA] border-2 border-black flex items-center justify-center mr-4 font-black">
-                    MD
+                    <Users className="w-6 h-6" />
                   </div>
                   <div>
                     <div className="font-black text-black">Mike Davis</div>
@@ -455,39 +462,19 @@ export default function LandingPage() {
                   AI-powered semantic code search and exploration platform. Transform how you understand and navigate
                   your codebase.
                 </p>
-                <div className="text-sm font-bold text-black uppercase">Built with ❤️ by developers, for developers</div>
+                <div className="text-sm font-bold text-black uppercase">
+                  Built with &hearts; by developers, for developers
+                </div>
               </div>
 
               {/* Product Links */}
               <div>
                 <h3 className="font-black uppercase text-black mb-4">Product</h3>
                 <ul className="space-y-2">
-                  <li>
-                    <a
-                      href="#features"
-                      className="font-bold text-black hover:text-[#FF3F3F] transition-colors uppercase"
-                    >
-                      Features
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="#how-it-works"
-                      className="font-bold text-black hover:text-[#FF3F3F] transition-colors uppercase"
-                    >
-                      How it works
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#" className="font-bold text-black hover:text-[#FF3F3F] transition-colors uppercase">
-                      Pricing
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#" className="font-bold text-black hover:text-[#FF3F3F] transition-colors uppercase">
-                      API Docs
-                    </a>
-                  </li>
+                  <li><a href="#features" className="font-bold text-black hover:text-[#FF3F3F] transition-colors uppercase">Features</a></li>
+                  <li><a href="#how-it-works" className="font-bold text-black hover:text-[#FF3F3F] transition-colors uppercase">How it works</a></li>
+                  <li><a href="/plans" className="font-bold text-black hover:text-[#FF3F3F] transition-colors uppercase">Pricing</a></li>
+                  <li><a href="#" className="font-bold text-black hover:text-[#FF3F3F] transition-colors uppercase">API Docs</a></li>
                 </ul>
               </div>
 
@@ -495,26 +482,10 @@ export default function LandingPage() {
               <div>
                 <h3 className="font-black uppercase text-black mb-4">Company</h3>
                 <ul className="space-y-2">
-                  <li>
-                    <a href="#" className="font-bold text-black hover:text-[#FF3F3F] transition-colors uppercase">
-                      About
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#" className="font-bold text-black hover:text-[#FF3F3F] transition-colors uppercase">
-                      Blog
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#" className="font-bold text-black hover:text-[#FF3F3F] transition-colors uppercase">
-                      Careers
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#" className="font-bold text-black hover:text-[#FF3F3F] transition-colors uppercase">
-                      Contact
-                    </a>
-                  </li>
+                  <li><a href="#" className="font-bold text-black hover:text-[#FF3F3F] transition-colors uppercase">About</a></li>
+                  <li><a href="#" className="font-bold text-black hover:text-[#FF3F3F] transition-colors uppercase">Blog</a></li>
+                  <li><a href="#" className="font-bold text-black hover:text-[#FF3F3F] transition-colors uppercase">Careers</a></li>
+                  <li><a href="#" className="font-bold text-black hover:text-[#FF3F3F] transition-colors uppercase">Contact</a></li>
                 </ul>
               </div>
             </div>
@@ -524,15 +495,9 @@ export default function LandingPage() {
                 © 2024 Snipiq. All rights reserved.
               </div>
               <div className="flex items-center space-x-6 text-sm font-bold text-black uppercase">
-                <a href="#" className="hover:text-[#FF3F3F] transition-colors">
-                  Privacy Policy
-                </a>
-                <a href="#" className="hover:text-[#FF3F3F] transition-colors">
-                  Terms of Service
-                </a>
-                <a href="#" className="hover:text-[#FF3F3F] transition-colors">
-                  Support
-                </a>
+                <a href="#" className="hover:text-[#FF3F3F] transition-colors">Privacy Policy</a>
+                <a href="#" className="hover:text-[#FF3F3F] transition-colors">Terms of Service</a>
+                <a href="#" className="hover:text-[#FF3F3F] transition-colors">Support</a>
               </div>
             </div>
           </div>

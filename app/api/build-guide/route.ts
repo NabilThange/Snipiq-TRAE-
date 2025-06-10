@@ -24,10 +24,10 @@ interface SessionChunk {
   content: string;
   file_path: string;
   sessionId: string;
+  embedding?: number[]; // Added based on milvus.ts queryBySessionId output_fields
   startLine?: number;
   endLine?: number;
   chunkType?: string;
-  [key: string]: any; // Allow for additional properties
 }
 
 export async function POST(req: NextRequest) {
@@ -199,8 +199,6 @@ function generateTeachingExplanation(content: string, fileName: string, fileExte
     return `STEP ${stepNumber}: Create an empty file called ${fileName} - this will be your starting point!`;
   }
 
-  const lines = content.split('\n').filter(line => line.trim() !== '');
-  
   // Analyze content type and provide basic teaching instructions
   let instructions = `STEP ${stepNumber}: `;
   let codeType: string = 'code'; // Initialize codeType at the start of the function

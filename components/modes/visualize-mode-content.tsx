@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { ZoomIn, ZoomOut, Download, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { apiClient, VisualizeNode, VisualizeEdge } from "@/lib/api-client"
-import { useSession } from "@/lib/session-context"
 
 interface VisualizeModeContentProps {
   sessionId: string
@@ -35,9 +34,9 @@ export default function VisualizeModeContent({ sessionId }: VisualizeModeContent
         } else {
           setVisualizationError(response.message || "Failed to fetch visualization data.")
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error("Error fetching visualization data:", error)
-        setVisualizationError(error.message || "An unexpected error occurred while fetching visualization data.")
+        setVisualizationError(error instanceof Error ? error.message : "An unexpected error occurred while fetching visualization data.")
       } finally {
         setIsLoadingVisualization(false)
       }
@@ -51,7 +50,7 @@ export default function VisualizeModeContent({ sessionId }: VisualizeModeContent
     return "#000000" // Default to black for all nodes
   }
 
-  const getNodeSize = (node: VisualizeNode) => {
+  const getNodeSize = (_node: VisualizeNode) => { // Renamed node to _node to mark as unused
     // All nodes are treated as files in the simplified visualization
     return 40
   }
@@ -71,14 +70,6 @@ export default function VisualizeModeContent({ sessionId }: VisualizeModeContent
   const handleExport = () => {
     alert("EXPORT FUNCTIONALITY WOULD BE IMPLEMENTED HERE")
   }
-
-  const filteredNodes = nodes.filter((node) => {
-    // Filter logic might be limited due to simplified node structure from backend
-    // For now, only filter by 'all' or based on future node types
-    if (selectedFilter === "all") return true
-    // Add more filter conditions if node properties allow
-    return true
-  })
 
   if (!sessionId) {
     return (

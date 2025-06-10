@@ -10,12 +10,11 @@ import type { SearchMode } from "@/lib/types"
 
 interface SearchInterfaceProps {
   currentMode: SearchMode
-  sessionId: string
   onSearch: (query: string) => Promise<void>;
   isSearching: boolean;
 }
 
-export default function SearchInterface({ currentMode, sessionId, onSearch, isSearching }: SearchInterfaceProps) {
+export default function SearchInterface({ currentMode, onSearch, isSearching }: SearchInterfaceProps) {
   const [query, setQuery] = useState("")
 
   const handleSubmit = (e: React.FormEvent) => {

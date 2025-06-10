@@ -29,14 +29,6 @@ interface SummarizeResponse {
   summary: string;
 }
 
-interface OrganizedChunks {
-  mainFiles?: any[];
-  configFiles?: any[];
-  components?: any[];
-  utilities?: any[];
-  others?: any[];
-}
-
 class NovitaClient {
   private apiKey: string;
   private client: AxiosInstance;
@@ -62,13 +54,13 @@ class NovitaClient {
         encoding_format: "float",
       });
       return response.data;
-    } catch (error) {
+    } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         console.error('Error generating embeddings:', error.response?.data || error.message);
         throw new Error(`Failed to generate embeddings: ${error.response?.data?.message || error.message}`);
       } else {
         console.error('Unexpected error:', error);
-        throw new Error(`An unexpected error occurred: ${error}`);
+        throw new Error(`An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
   }
@@ -80,13 +72,13 @@ class NovitaClient {
         messages: messages,
       });
       return response.data;
-    } catch (error) {
+    } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         console.error('Error during chat completion:', error.response?.data || error.message);
         throw new Error(`Failed to get chat completion: ${error.response?.data?.message || error.message}`);
       } else {
         console.error('Unexpected error:', error);
-        throw new Error(`An unexpected error occurred: ${error}`);
+        throw new Error(`An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
   }
@@ -99,18 +91,18 @@ class NovitaClient {
       ];
       const chatResponse = await this.chatCompletion(messages, model);
       return { summary: chatResponse.choices[0]?.message?.content || '' };
-    } catch (error) {
+    } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         console.error('Error summarizing text:', error.response?.data || error.message);
         throw new Error(`Failed to summarize text: ${error.response?.data?.message || error.message}`);
       } else {
         console.error('Unexpected error:', error);
-        throw new Error(`An unexpected error occurred: ${error}`);
+        throw new Error(`An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
   }
 
-  async generateProjectSummary(organizedContent: any, summaryType: string, model: string = 'deepseek/deepseek-v3-turbo'): Promise<SummarizeResponse> {
+  async generateProjectSummary(organizedContent: Record<string, string | string[]>, summaryType: string, model: string = 'deepseek/deepseek-v3-turbo'): Promise<SummarizeResponse> {
     const prompt = this.buildSummaryPrompt(organizedContent, summaryType);
     
     try {
@@ -138,13 +130,13 @@ class NovitaClient {
       
       const data = await response.json();
       return { summary: data.choices[0]?.message?.content || '' };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Summary generation failed:', error);
-      throw new Error(`Failed to generate summary: ${error.message}`);
+      throw new Error(`Failed to generate summary: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
-  private buildSummaryPrompt(organizedContent: any, summaryType: string): string {
+  private buildSummaryPrompt(organizedContent: Record<string, string | string[]>, summaryType: string): string {
     const files = Object.keys(organizedContent);
     const fileContents = Object.entries(organizedContent)
       .map(([fileName, chunks]) => `File: ${fileName}\nContent: ${Array.isArray(chunks) ? chunks.join('\n') : chunks}`)
@@ -199,24 +191,16 @@ Respond as if teaching a 12-year-old how to build this.`;
         const chatResponse = await this.chatCompletion(messages, model);
         const result = { summary: chatResponse.choices[0]?.message?.content || '' };
         this.cache.set(cacheKey, result);
-        console.log(`Cached result for ${fileName} (Step ${stepNumber})`);
         return result;
-      } catch (error) {
-        console.error(`Error teaching code creation for ${fileName} (Step ${stepNumber}), attempt ${attempt}:`, error);
+      } catch (error: unknown) {
+        console.error(`Attempt ${attempt} failed to teach code creation for ${fileName}:`, error);
         if (attempt === retries) {
-          if (axios.isAxiosError(error)) {
-            throw new Error(`Failed to teach code creation after ${retries} attempts: ${error.response?.data?.message || error.message}`);
-          } else {
-            throw new Error(`An unexpected error occurred after ${retries} attempts: ${error}`);
-          }
+          throw new Error(`Failed to teach code creation after ${retries} attempts: ${error instanceof Error ? error.message : String(error)}`);
         }
-        // Exponential backoff
-        await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
-        console.log(`Retrying for ${fileName} (Step ${stepNumber})...`);
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
       }
     }
-    // This part should technically not be reached if retries are handled correctly
-    throw new Error("Failed to teach code creation after multiple attempts.");
+    throw new Error("Should not reach here");
   }
 }
 

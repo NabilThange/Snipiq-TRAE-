@@ -106,7 +106,7 @@ export class ApiClient {
     this.baseUrl = options?.baseUrl || '/api';
   }
 
-  private async request<T>(endpoint: string, method: string, data?: any): Promise<T> {
+  private async request<T>(endpoint: string, method: string, data?: unknown): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     const config: RequestInit = {
       method,
@@ -126,7 +126,7 @@ export class ApiClient {
         throw new Error(errorData.message || `API request failed with status ${response.status}`);
       }
       return await response.json();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(`API Client Error (${method} ${url}):`, error);
       throw error;
     }
@@ -154,7 +154,7 @@ export class ApiClient {
       console.log("API Client: Upload successful, files extracted:", data.totalCodeFiles)
       
       return data
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("API Client: Upload error:", error)
       if (error instanceof Error) {
         throw error
@@ -190,7 +190,7 @@ export class ApiClient {
 
       const data = await response.json()
       console.log("API Client: Indexing successful:", data.message || "Complete")
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("API Client: Indexing error:", error)
       if (error instanceof Error) {
         throw error
@@ -219,7 +219,7 @@ export class ApiClient {
     return this.request<BuildGuideResponse>('/build-guide', 'POST', { sessionId });
   }
 
-  async getBuildGuideStream(sessionId: string, onUpdate: (data: any) => void, onComplete: () => void, onError: (error: string) => void): Promise<void> {
+  async getBuildGuideStream(sessionId: string, onUpdate: (data: unknown) => void, onComplete: () => void, onError: (error: string) => void): Promise<void> {
     console.log("API Client: Requesting build guide stream for session:", sessionId);
     try {
       const response = await fetch(`${this.baseUrl}/build-guide-stream`, {
@@ -248,35 +248,49 @@ export class ApiClient {
 
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
-
+        if (done) {
+          onComplete();
+          break;
+        }
         buffer += decoder.decode(value, { stream: true });
 
-        let newlineIndex;
-        while ((newlineIndex = buffer.indexOf('\n\n')) !== -1) {
-          const message = buffer.substring(0, newlineIndex);
-          buffer = buffer.substring(newlineIndex + 2);
+        // Process complete JSON messages from the buffer
+        while (true) {
+          const eventEndIndex = buffer.indexOf('\n\n');
+          if (eventEndIndex === -1) break; // No complete event yet
 
-          if (message.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(message.substring(6));
-              onUpdate(data);
-              if (data.type === 'complete') {
-                onComplete();
-                reader.releaseLock();
-                return;
+          const eventBlock = buffer.substring(0, eventEndIndex).trim();
+          buffer = buffer.substring(eventEndIndex + 2); // +2 for \n\n
+
+          const lines = eventBlock.split('\n');
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const jsonString = line.substring(6).trim();
+              if (jsonString) {
+                try {
+                  const parsedData = JSON.parse(jsonString);
+                  onUpdate(parsedData);
+                } catch (parseError: unknown) {
+                  console.error("API Client: Error parsing stream data:", parseError, 'Raw data:', jsonString);
+                  onError(`Failed to parse stream data: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
+                }
               }
-            } catch (parseError) {
-              console.error("API Client: Error parsing stream message:", parseError, message);
-              onError(`Error parsing stream message: ${message}`);
+            } else if (line.startsWith('event: ') || line.startsWith('id: ') || line.startsWith(':')) {
+              // Ignore event, id, or comment lines
+              continue;
+            } else if (line === '') {
+              // Ignore empty lines within an event block (except the final \n\n delimiter)
+              continue;
+            } else {
+              // Log unexpected lines, but try to continue to avoid blocking valid data
+              console.warn("API Client: Unexpected line in stream:", line);
             }
           }
         }
       }
-      onComplete();
-    } catch (error: any) {
-      console.error("API Client: Stream error:", error);
-      onError(error.message || "An unknown error occurred during streaming");
+    } catch (error: unknown) {
+      console.error("API Client: Build guide stream error:", error);
+      onError(error instanceof Error ? error.message : "An unknown error occurred during stream.");
     }
   }
 

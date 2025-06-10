@@ -24,9 +24,9 @@ export interface RawZillizHit {
 }
 
 export interface ZillizSearchResponse {
-  status: any; // You might want to define a more specific interface for status
+  status: unknown;
   results: RawZillizHit[];
-  recalls: any[];
+  recalls: unknown[];
   session_ts: string;
   collection_name: string;
   all_search_count: string;

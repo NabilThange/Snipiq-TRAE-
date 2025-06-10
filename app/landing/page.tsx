@@ -339,7 +339,7 @@ export default function LandingPage() {
                 ))}
               </div>
               <p className="text-lg font-bold text-black mb-6 leading-relaxed">
-                "Snipiq completely changed how I navigate large codebases. The semantic search is incredibly accurate!"
+                &quot;Snipiq completely changed how I navigate large codebases. The semantic search is incredibly accurate!&quot;
               </p>
               <div className="flex items-center">
                 <div className="w-12 h-12 bg-black text-[#FFFF00] border-2 border-black flex items-center justify-center mr-4 font-black">
@@ -360,7 +360,7 @@ export default function LandingPage() {
                 ))}
               </div>
               <p className="text-lg font-bold text-black mb-6 leading-relaxed">
-                "The chat feature is like having a senior developer explain the codebase to you. Absolutely brilliant!"
+                &quot;The chat feature is like having a senior developer explain the codebase to you. Absolutely brilliant!&quot;
               </p>
               <div className="flex items-center">
                 <div className="w-12 h-12 bg-black text-[#FFB3BA] border-2 border-black flex items-center justify-center mr-4 font-black">

@@ -13,28 +13,6 @@ interface ChatMessage {
   timestamp: Date
 }
 
-// Component to render chat message content, especially for code blocks
-const MessageContent = ({ content }: { content: string }) => {
-  const parts = content.split(/(```[\s\S]*?```)/g);
-
-  return (
-    <p className="font-bold leading-relaxed">
-      {parts.map((part, index) => {
-        if (part.startsWith('```') && part.endsWith('```')) {
-          const code = part.substring(3, part.length - 3);
-          return (
-            <pre key={index} className="bg-black border-4 border-black p-3 my-2 overflow-x-auto">
-              <code className="text-sm font-mono whitespace-pre-wrap text-[#00ff88]">{code}</code>
-            </pre>
-          );
-        } else {
-          return <span key={index}>{part}</span>;
-        }
-      })}
-    </p>
-  );
-};
-
 export default function ChatModeContent() {
   const { sessionId } = useSession()
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -70,10 +48,10 @@ export default function ChatModeContent() {
         setChatError(response.message || "Failed to get chat response.")
         addMessage(response.message || "Failed to get chat response.", "ai") // Add error message to chat
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error sending chat message:", error)
-      setChatError(error.message || "An unexpected error occurred during chat.")
-      addMessage(error.message || "An unexpected error occurred during chat.", "ai") // Add error message to chat
+      setChatError(error instanceof Error ? error.message : "An unexpected error occurred during chat.")
+      addMessage(error instanceof Error ? error.message : "An unexpected error occurred during chat.", "ai") // Add error message to chat
     } finally {
       setIsTyping(false)
     }
@@ -103,7 +81,7 @@ export default function ChatModeContent() {
 
     window.addEventListener("chatMessage", handleChatMessage as EventListener)
     return () => window.removeEventListener("chatMessage", handleChatMessage as EventListener)
-  }, [sessionId]) // Re-run effect if sessionId changes
+  }, [sessionId, sendChatMessage]) // Re-run effect if sessionId or sendChatMessage changes
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })

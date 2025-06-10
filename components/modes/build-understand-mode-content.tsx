@@ -5,11 +5,9 @@ import {
   Play,
   CheckCircle,
   Circle,
-  AlertCircle,
   Book,
   Terminal,
   Folder,
-  Settings,
   ChevronDown,
   ChevronUp,
   Code,
@@ -18,7 +16,6 @@ import {
 import { Button } from "@/components/ui/button"
 import type { BuildStep } from "@/lib/api-client"
 import { apiClient } from "@/lib/api-client"
-import { useSession } from "@/lib/session-context"
 import ReactMarkdown from 'react-markdown'
 
 interface BuildUnderstandModeContentProps {
@@ -67,16 +64,16 @@ export default function BuildUnderstandModeContent({ sessionId }: BuildUnderstan
             setIsLoadingBuildGuide(false);
             console.log("Build guide stream completed.");
           },
-          (error) => {
-            setBuildGuideError(error);
+          (error: unknown) => {
+            setBuildGuideError(error instanceof Error ? error.message : String(error));
             setIsLoadingBuildGuide(false);
             console.error("Build guide stream error:", error);
           }
         );
 
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error("Error fetching build guide:", error)
-        setBuildGuideError(error.message || "An unexpected error occurred while fetching the build guide.")
+        setBuildGuideError(error instanceof Error ? error.message : "An unexpected error occurred while fetching the build guide.")
         setIsLoadingBuildGuide(false)
       }
     }
