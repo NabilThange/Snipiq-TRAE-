@@ -3,6 +3,8 @@
 ## Project Overview
 Snipiq is an AI-powered code exploration platform built with Next.js, TypeScript, and Zilliz Cloud.
 
+aa
+
 ## Prerequisites
 - Node.js (v18+ recommended)
 - pnpm (Package Manager)
