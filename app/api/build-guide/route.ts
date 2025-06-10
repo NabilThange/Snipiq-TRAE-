@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     let sessionChunks: SessionChunk[];
     try {
       sessionChunks = await queryBySessionId(sessionId);
-    } catch (queryError) {
+    } catch (queryError: unknown) {
       console.error('Error querying session chunks:', queryError);
       return NextResponse.json({
         success: false,
@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
           };
           console.log(`Successfully prepared step ${currentStepNumber} for ${fileName}.`);
           return step;
-        } catch (chunkError) {
+        } catch (chunkError: unknown) {
           console.error(`Error processing chunk for ${chunk.file_path || chunk.filePath || 'Unknown file'}:`, chunkError);
           return null; // Return null for chunks that failed processing
         }
@@ -164,11 +164,11 @@ export async function POST(req: NextRequest) {
       sessionId: sessionId
     }, { status: 200 });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('API error in build-guide route:', error);
     
     // Handle specific error types
-    if (error.message?.includes('not available during build')) {
+    if (error instanceof Error && error.message?.includes('not available during build')) {
       return NextResponse.json({
         success: false,
         message: 'Vector database not available during build.',
@@ -176,7 +176,7 @@ export async function POST(req: NextRequest) {
       }, { status: 503 });
     }
 
-    if (error.message?.includes('ENOTFOUND') || error.message?.includes('ECONNREFUSED')) {
+    if (error instanceof Error && (error.message?.includes('ENOTFOUND') || error.message?.includes('ECONNREFUSED'))) {
       return NextResponse.json({
         success: false,
         message: 'Database connection failed. Please try again later.',
@@ -187,7 +187,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ 
       success: false, 
       message: 'An unexpected error occurred during build guide generation.',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      error: error instanceof Error ? error.message : 'Unknown error',
       steps: [] 
     }, { status: 500 });
   }
@@ -200,7 +200,6 @@ function generateTeachingExplanation(content: string, fileName: string, fileExte
   }
 
   const lines = content.split('\n').filter(line => line.trim() !== '');
-  const lineCount = lines.length;
   
   // Analyze content type and provide basic teaching instructions
   let instructions = `STEP ${stepNumber}: `;

@@ -98,4 +98,13 @@ export interface ProjectAnalysis {
   environment: string[]
 }
 
+export interface CodeChunk {
+  id?: number;
+  content: string;
+  filePath: string;
+  embedding?: number[]; // Embedding can be optional if not always retrieved
+  sessionId: string;
+  lineNumber: number;
+}
+
 export type SearchMode = "build-understand" | "search" | "summarize" | "chat" | "visualize"

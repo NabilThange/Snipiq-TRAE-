@@ -45,8 +45,6 @@ export async function POST(req: NextRequest) {
         // Send total count first
         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'total', count: sessionChunks.length })}\n\n`));
         
-        const buildSteps: BuildStep[] = [];
-
         // Process chunks in batches to respect rate limits
         for (let i = 0; i < sessionChunks.length; i += BATCH_SIZE) {
           const batch = sessionChunks.slice(i, i + BATCH_SIZE);
@@ -86,10 +84,10 @@ export async function POST(req: NextRequest) {
               controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'step', step })}\n\n`));
               
               return step;
-            } catch (error) {
+            } catch (error: unknown) {
               console.error(`Error processing ${filePath}:`, error);
               // Even if there's an error, send a partial update for progress
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'error', message: `Error processing ${filePath}: ${error}`, stepNumber })}\n\n`));
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'error', message: `Error processing ${filePath}: ${error instanceof Error ? error.message : String(error)}`, stepNumber })}\n\n`));
               return null;
             }
           });
@@ -104,9 +102,9 @@ export async function POST(req: NextRequest) {
         
         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'complete' })}\n\n`));
         controller.close();
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Stream error:', error);
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'error', message: error.message || 'An unknown error occurred during streaming' })}\n\n`));
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'error', message: error instanceof Error ? error.message : 'An unknown error occurred during streaming' })}\n\n`));
         controller.close();
       }
     }

@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import fs from 'fs/promises'; // Use async fs
-import path from 'path';
 import { CodeChunker } from '../../../lib/code-chunker';
 import NovitaClient from '../../../lib/novita-client';
 import { getMilvusClient, COLLECTION_NAME } from '../../../lib/milvus';
-import { IndexState } from '@zilliz/milvus2-sdk-node';
 
 const novitaClient = new NovitaClient(process.env.NOVITA_API_KEY || '');
 
@@ -13,7 +10,7 @@ const MAX_INDEX_WAIT_TIME = 10 * 60 * 1000;
 const POLLING_INTERVAL = 2000;
 const MAX_CONCURRENT_FILES = 5; // Process max 5 files concurrently
 const MAX_CONCURRENT_EMBEDDINGS = 10; // Process max 10 embeddings concurrently
-const BATCH_SIZE = 20; // Process embeddings in batches
+const EMBEDDING_BATCH_SIZE = 20; // Process embeddings in batches
 const MAX_RETRIES = 30; // Max attempts for index polling
 
 interface FileNode {
@@ -94,8 +91,8 @@ async function processCodeFileContent(file: FileNode, sessionId: string) {
           };
         }
         return null;
-      } catch (error) {
-        console.error(`Failed to generate embedding for chunk in ${filePath}:`, error);
+      } catch (error: unknown) {
+        console.error(`Failed to generate embedding for chunk in ${filePath}:`, error instanceof Error ? error.message : String(error));
         return null;
       }
     };
@@ -112,8 +109,8 @@ async function processCodeFileContent(file: FileNode, sessionId: string) {
     console.log(`Processed ${validResults.length}/${codeChunks.length} chunks for ${filePath}`);
     return embeddingsToInsert;
 
-  } catch (error) {
-    console.warn(`Could not process file ${file.path}:`, error);
+  } catch (error: unknown) {
+    console.warn(`Could not process file ${file.path}:`, error instanceof Error ? error.message : String(error));
     return [];
   }
 }
@@ -125,7 +122,10 @@ async function createIndexIfNeeded(milvusClient: any, totalEmbeddings: number) {
     const indexInfo = await milvusClient.describeIndex({
       collection_name: COLLECTION_NAME,
       field_name: 'embedding'
-    }).catch(() => null);
+    }).catch((error: unknown) => {
+      console.warn('Error describing index, assuming it does not exist:', error instanceof Error ? error.message : String(error));
+      return null;
+    });
 
     if (indexInfo && indexInfo.index_descriptions?.length > 0) {
       console.log('Index already exists, skipping creation');
@@ -179,8 +179,8 @@ async function createIndexIfNeeded(milvusClient: any, totalEmbeddings: number) {
 
     throw new Error(`Index creation timed out after ${MAX_INDEX_WAIT_TIME / 1000} seconds or exceeded ${MAX_RETRIES} retries.`);
     
-  } catch (error) {
-    console.error('Index creation error:', error);
+  } catch (error: unknown) {
+    console.error('Index creation error:', error instanceof Error ? error.message : String(error));
     throw error;
   }
 }
@@ -249,34 +249,26 @@ export async function POST(req: NextRequest) {
     console.log(`Embeddings inserted in ${insertTime}ms`);
 
     // Create index if needed
-    const indexStartTime = Date.now();
     await createIndexIfNeeded(milvusClient, embeddingsToInsert.length);
-    const indexTime = Date.now() - indexStartTime;
 
-    // Load collection
-    console.log(`Loading collection '${COLLECTION_NAME}'...`);
-    const loadStartTime = Date.now();
-    await milvusClient.loadCollection({ collection_name: COLLECTION_NAME });
-    const loadTime = Date.now() - loadStartTime;
-    console.log(`Collection loaded in ${loadTime}ms`);
+    const indexTime = Date.now() - insertStartTime - insertTime;
 
-    const totalTime = Date.now() - startTime;
-    console.log(`Indexing process completed in ${totalTime}ms`);
+    console.log(`Indexing process completed in ${Date.now() - startTime}ms`);
 
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Indexing completed successfully',
-      chunksProcessed: embeddingsToInsert.length,
-      processingTime: totalTime,
-      sessionId: sessionId
+    return NextResponse.json({
+      success: true,
+      message: 'Codebase indexed successfully.',
+      totalChunks: embeddingsToInsert.length,
+      processingTime: totalProcessingTime,
+      indexingTime: Date.now() - startTime - totalProcessingTime
     }, { status: 200 });
 
-  } catch (error) {
-    console.error('Indexing API Error:', error);
-    return NextResponse.json({ 
+  } catch (error: unknown) {
+    console.error('Indexing API error:', error);
+    return NextResponse.json({
       success: false,
-      error: 'Indexing failed',
-      details: error instanceof Error ? error.message : 'Unknown indexing error'
+      message: error instanceof Error ? error.message : 'An unexpected error occurred during indexing.',
+      error: process.env.NODE_ENV === 'development' && error instanceof Error ? error.message : undefined
     }, { status: 500 });
   }
 }

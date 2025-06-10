@@ -285,11 +285,12 @@ export async function POST(request: NextRequest) {
       totalCodeFiles: extractedFiles.length,
       tempDir
     });
-  } catch (error: any) {
-    console.error('Error in upload API:', error);
-    return NextResponse.json({
-      error: 'An error occurred during file upload',
-      message: error.message || 'Unknown error'
+  } catch (error: unknown) {
+    console.error('Upload API error:', error);
+    return NextResponse.json({ 
+      success: false,
+      message: `File upload failed: ${error instanceof Error ? error.message : String(error)}`,
+      error: process.env.NODE_ENV === 'development' && error instanceof Error ? error.message : undefined
     }, { status: 500 });
   }
 }

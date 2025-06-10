@@ -9,7 +9,7 @@ interface SessionContextType {
   setIsUploading: (status: boolean) => void;
   uploadedFilePaths: string[];
   setUploadedFilePaths: (paths: string[]) => void;
-  uploadError: string | null;
+  _uploadError: string | null;
   setUploadError: (error: string | null) => void;
 }
 
@@ -19,7 +19,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [uploadedFilePaths, setUploadedFilePaths] = useState<string[]>([]);
-  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [_uploadError, setUploadError] = useState<string | null>(null);
 
   return (
     <SessionContext.Provider
@@ -30,7 +30,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
         setIsUploading,
         uploadedFilePaths,
         setUploadedFilePaths,
-        uploadError,
+        _uploadError,
         setUploadError,
       }}
     >

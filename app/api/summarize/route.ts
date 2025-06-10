@@ -4,6 +4,7 @@ import path from 'path';
 import os from 'os';
 import NovitaClient from '../../../lib/novita-client';
 import ZillizClient from '../../../lib/zilliz-client';
+import { CodeChunk } from '../../../lib/types';
 
 const novitaClient = new NovitaClient(process.env.NOVITA_API_KEY || '');
 let zillizClient: ZillizClient | null = null;
@@ -30,15 +31,15 @@ async function getFilesInDirectory(dir: string, fileList: string[] = []): Promis
 }
 
 // Helper function to organize chunks by file type/importance
-function organizeChunksByFile(chunks: any[]) {
-  const fileMap = new Map();
+function organizeChunksByFile(chunks: CodeChunk[]) {
+  const fileMap = new Map<string, string[]>();
   
   chunks.forEach(chunk => {
     const fileName = chunk.filePath;
     if (!fileMap.has(fileName)) {
       fileMap.set(fileName, []);
     }
-    fileMap.get(fileName).push(chunk.content);
+    fileMap.get(fileName)?.push(chunk.content);
   });
   
   return Object.fromEntries(fileMap);
@@ -58,9 +59,9 @@ export async function GET(req: NextRequest) {
     const extractedFiles = await getFilesInDirectory(sessionDirPath);
     const relativePaths = extractedFiles.map(filePath => path.relative(sessionDirPath, filePath));
     return NextResponse.json({ success: true, files: relativePaths }, { status: 200 });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(`Error listing files for session ${sessionId}:`, error);
-    return NextResponse.json({ success: false, message: 'Failed to list files.' }, { status: 500 });
+    return NextResponse.json({ success: false, message: `Failed to list files: ${error instanceof Error ? error.message : String(error)}` }, { status: 500 });
   }
 }
 
@@ -94,7 +95,7 @@ export async function POST(request: NextRequest) {
         
         fileContent = await fs.readFile(fullPath, 'utf-8');
         console.log(`[SUMMARIZE] Successfully read file: ${filePath} (${fileContent.length} characters)`);
-      } catch (readError: any) {
+      } catch (readError: unknown) {
         console.error(`[SUMMARIZE] Could not read file ${fullPath}:`, readError);
         
         // **FIX 3: Try alternative approaches if direct file read fails**
@@ -110,7 +111,7 @@ export async function POST(request: NextRequest) {
           } else {
             // Option B: Try to get content from vector database
             console.log(`[SUMMARIZE] File not found on disk, attempting to retrieve from vector DB`);
-            const chunks = await getZillizClient().getAllChunks(sessionId);
+            const chunks: CodeChunk[] = await getZillizClient().getAllChunks(sessionId);
             const fileChunks = chunks.filter(chunk => 
               chunk.filePath.includes(path.basename(filePath))
             );
@@ -132,11 +133,11 @@ export async function POST(request: NextRequest) {
               }, { status: 404 });
             }
           }
-        } catch (fallbackError) {
+        } catch (fallbackError: unknown) {
           console.error(`[SUMMARIZE] All fallback methods failed:`, fallbackError);
           return NextResponse.json({ 
             success: false, 
-            message: `File not found and could not retrieve from vector DB: ${filePath}`, 
+            message: `File not found and could not retrieve from vector DB: ${filePath}. Error: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`, 
             summary: '' 
           }, { status: 404 });
         }
@@ -152,9 +153,9 @@ export async function POST(request: NextRequest) {
         const summarizeResponse = await novitaClient.summarizeText(fileContent);
         summary = summarizeResponse.summary;
         console.log(`[SUMMARIZE] Summary generated successfully for ${filePath}`);
-      } catch (summarizeError) {
+      } catch (summarizeError: unknown) {
         console.error('[SUMMARIZE] Error during text summarization:', summarizeError);
-        return NextResponse.json({ success: false, message: 'Failed to generate summary.', summary: '' }, { status: 500 });
+        return NextResponse.json({ success: false, message: `Failed to generate summary: ${summarizeError instanceof Error ? summarizeError.message : String(summarizeError)}`, summary: '' }, { status: 500 });
       }
 
       return NextResponse.json({ success: true, message: 'Text summarized successfully.', summary: summary, fileContent: fileContent }, { status: 200 });
@@ -164,7 +165,7 @@ export async function POST(request: NextRequest) {
       console.log(`[SUMMARIZE] Generating project-wide summary for session: ${sessionId}`);
       try {
         // Retrieve all code chunks from vector DB
-        const allChunks = await getZillizClient().getAllChunks(sessionId);
+        const allChunks: CodeChunk[] = await getZillizClient().getAllChunks(sessionId);
         
         if (!allChunks || allChunks.length === 0) {
           return NextResponse.json({ 
@@ -193,17 +194,21 @@ export async function POST(request: NextRequest) {
           summary: summaryResponse.summary,
           summaryType
         }, { status: 200 });
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('[SUMMARIZE] Error during project summarization:', error);
         return NextResponse.json({ 
           success: false, 
-          message: `Failed to generate project summary: ${error.message}`, 
+          message: `Failed to generate project summary: ${error instanceof Error ? error.message : String(error)}`, 
           summary: '' 
         }, { status: 500 });
       }
     }
-  } catch (error) {
-    console.error('[SUMMARIZE] API error in summarize route:', error);
-    return NextResponse.json({ success: false, message: 'An unexpected error occurred during summarization.', summary: '' }, { status: 500 });
+  } catch (error: unknown) {
+    console.error('Summarize API error:', error);
+    return NextResponse.json({ 
+      success: false, 
+      message: `An unexpected error occurred during summarization: ${error instanceof Error ? error.message : String(error)}`, 
+      summary: '' 
+    }, { status: 500 });
   }
 }

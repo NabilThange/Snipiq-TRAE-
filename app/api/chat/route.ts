@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import NovitaClient from '../../../lib/novita-client';
-import { getMilvusClient, searchVectors } from '../../../lib/milvus';
+import { searchVectors } from '../../../lib/milvus';
 
 const novitaClient = new NovitaClient(process.env.NOVITA_API_KEY || '');
-
-const COLLECTION_NAME = 'code_embeddings';
 
 export async function POST(req: NextRequest) {
   try {
@@ -86,15 +84,15 @@ export async function POST(req: NextRequest) {
       message: 'Chat response generated successfully.',
       response: chatResponseContent
     }, { status: 200 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('API error in chat route:', error);
-    if (error.message.includes('not available during build')) {
+    if (error instanceof Error && error.message.includes('not available during build')) {
       return NextResponse.json({
         success: false,
         message: 'Vector database not available during build.',
         response: ''
       }, { status: 503 });
     }
-    return NextResponse.json({ success: false, message: 'An unexpected error occurred during chat.', response: '' }, { status: 500 });
+    return NextResponse.json({ success: false, message: error instanceof Error ? error.message : 'An unexpected error occurred during chat.', response: '' }, { status: 500 });
   }
 } 

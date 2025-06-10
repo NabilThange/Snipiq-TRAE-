@@ -192,11 +192,11 @@ export async function POST(req: NextRequest) {
       results: formattedResults
     }, { status: 200 });
    
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Search API error:', error);
       return NextResponse.json({
         success: false,
-      message: 'Search failed: ' + error.message,
+      message: 'Search failed: ' + (error instanceof Error ? error.message : String(error)),
         results: []
     }, { status: 500 });
   }

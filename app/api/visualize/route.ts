@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getMilvusClient, COLLECTION_NAME, queryBySessionId } from '../../../lib/milvus';
+import { queryBySessionId } from '../../../lib/milvus';
 
 export async function POST(req: NextRequest) {
   try {
@@ -44,15 +44,15 @@ export async function POST(req: NextRequest) {
     };
 
     return NextResponse.json({ success: true, message: 'Visualization data generated successfully from Zilliz data.', graph: graphData }, { status: 200 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('API error in visualize route:', error);
-    if (error.message.includes('not available during build')) {
+    if (error instanceof Error && error.message.includes('not available during build')) {
       return NextResponse.json({
         success: false,
         message: 'Vector database not available during build.',
         graph: {}
       }, { status: 503 });
     }
-    return NextResponse.json({ success: false, message: 'An unexpected error occurred during visualization.', graph: {} }, { status: 500 });
+    return NextResponse.json({ success: false, message: error instanceof Error ? error.message : 'An unexpected error occurred during visualization.', graph: {} }, { status: 500 });
   }
 } 

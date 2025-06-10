@@ -15,7 +15,7 @@ import { apiClient } from "@/lib/api-client"
 import { useSession } from "@/lib/session-context"
 
 export default function AppPage() {
-  const { sessionId, setSessionId, isUploading, uploadedFilePaths, setUploadedFilePaths, uploadError, setUploadError } = useSession()
+  const { sessionId, setSessionId, isUploading, uploadedFilePaths, setUploadedFilePaths, _uploadError, setUploadError } = useSession()
   console.log('DEBUG: sessionId in AppPage:', sessionId);
   console.log('DEBUG: isUploading in AppPage:', isUploading);
   console.log('DEBUG: uploadedFilePaths in AppPage:', uploadedFilePaths);
@@ -75,11 +75,11 @@ export default function AppPage() {
           variant: "destructive",
         })
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("API call failed:", error)
       toast({
         title: `${currentMode.toUpperCase()} FAILED`,
-        description: error.message || "AN UNEXPECTED ERROR OCCURRED. PLEASE TRY AGAIN.",
+        description: error instanceof Error ? error.message : "AN UNEXPECTED ERROR OCCURRED. PLEASE TRY AGAIN.",
         variant: "destructive",
       })
       setResults([])
